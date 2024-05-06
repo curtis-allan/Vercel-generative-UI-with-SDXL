@@ -15,7 +15,7 @@ const ImageCard = ({ newImage }: any) => {
       <CardHeader>
         <CardTitle>Prompt</CardTitle>
         <CardDescription>
-          <i className="tracking-tight">"{newImage.prompt}"</i>
+          <i className="tracking-tight">{`"${newImage.prompt}"`}</i>
         </CardDescription>
       </CardHeader>
       <CardContent className="w-full flex justify-center">
