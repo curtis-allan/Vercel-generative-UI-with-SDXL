@@ -14,8 +14,8 @@ const ImageCard = ({ newImage }: any) => {
     <Card className="grid items-center gap-4">
       <CardHeader>
         <CardTitle>Prompt</CardTitle>
-        <CardDescription className="italic tracking-tight">
-          "{newImage.prompt}"
+        <CardDescription>
+          <i className="tracking-tight">"{newImage.prompt}"</i>
         </CardDescription>
       </CardHeader>
       <CardContent className="w-full flex justify-center">
