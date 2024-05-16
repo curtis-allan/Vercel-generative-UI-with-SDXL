@@ -4,6 +4,7 @@ import "@/styles/globals.css";
 import { cn } from "@/lib/utils";
 import { AI } from "./actions/ai";
 import { ThemeProvider } from "@/components/theme-provider";
+import Navbar from "@/components/navbar";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -30,7 +31,10 @@ export default function RootLayout({
             disableTransitionOnChange
             enableSystem
           >
-            {children}
+            <div className="grid gap-4 container p-4">
+              <Navbar />
+              {children}
+            </div>
           </ThemeProvider>
         </body>
       </html>
