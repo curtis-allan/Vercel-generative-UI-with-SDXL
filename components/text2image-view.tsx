@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { Send, Settings2, X } from "lucide-react";
+import { Atom, DiamondMinus, Send, Settings2, X } from "lucide-react";
 import Image from "next/image";
 import { ModeToggle } from "./theme-toggle";
 import { Button } from "./ui/button";
@@ -14,8 +14,10 @@ import {
 } from "./ui/form";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -28,7 +30,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Textarea } from "./ui/textarea";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +40,10 @@ import { cn, getDimensions } from "@/lib/utils";
 import { AspectRatio } from "./ui/aspect-ratio";
 import { RequestLog } from "@fal-ai/serverless-client/src/types";
 import Spinner from "./spinner";
+import { Switch } from "./ui/switch";
+import { Slider } from "./ui/slider";
+import { ScrollArea } from "./ui/scroll-area";
+import { Dialog } from "./ui/dialog";
 
 fal.config({
   proxyUrl: "/api/fal/proxy",
@@ -53,19 +59,47 @@ const FormSchema = z.object({
     message: "Negative Prompt must not exceed 1500 characters.",
   }),
   image_size: z.string(),
-  //   num_inference_steps: z.number().min(1).max(12),
-  //   guidance_scale: z.number().min(1).max(2),
+  num_inference_steps: z
+    .number({ required_error: "Please enter a number." })
+    .positive({ message: "Must be a positive number." })
+    .int({ message: "Must be a whole number" })
+    .min(1, { message: "Must not be lower than 1" })
+    .max(12, { message: "Must not exceed 12." })
+    .or(z.string())
+    .pipe(
+      z.coerce
+        .number({ required_error: "Please enter a number." })
+        .positive({ message: "Must be a positive number." })
+        .int({ message: "Must be a whole number." })
+        .min(1, { message: "Must be a minimum of 1 step." })
+        .max(12, { message: "Cannot exceed 12 steps." })
+    ),
+  guidance_scale: z
+    .number({ required_error: "Please enter a number." })
+    .positive({ message: "Must be a positive number." })
+    .int({ message: "Must be a whole number" })
+    .min(1, { message: "Must be a minimum of 1 step." })
+    .max(5, { message: "Must not exceed 5 steps." })
+    .or(z.string())
+    .pipe(
+      z.coerce
+        .number({ required_error: "Please enter a number." })
+        .positive({ message: "Must be a positive number." })
+        .int({ message: "Must be a whole number." })
+        .min(1, { message: "Must be a minimum of 1 step." })
+        .max(5, { message: "Cannot exceed 5 steps." })
+    ),
   //   loras: z.optional(z.string().url()),
   //   embeddings: z.optional(z.string().url()),
   //   seed: z.optional(z.number()),
-  //   expand_prompt: z.boolean(),
+  expand_prompt: z.boolean(),
 });
 
 export default function TextToImage() {
   const [image, setImage] = useState<object | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updates, setUpdates] = useState<string>("");
-  const [aspectRatio, setAspectRatio] = useState<number>(1);
+  const [dimensions, setDimensions] = useState<number[]>([]);
   const [progress, setProgress] = useState<string>("");
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -76,11 +110,11 @@ export default function TextToImage() {
       negative_prompt:
         "(worst quality, low quality, normal quality, lowres, low details, oversaturated, undersaturated, overexposed, underexposed, grayscale, bw, bad photo, bad photography, bad art:1.4), (watermark, signature, text font, username, error, logo, words, letters, digits, autograph, trademark, name:1.2), (blur, blurry, grainy), morbid, ugly, asymmetrical, mutated malformed, mutilated, poorly lit, bad shadow, draft, cropped, out of frame, cut off, censored, jpeg artifacts, out of focus, glitch, duplicate, (airbrushed, cartoon, anime, semi-realistic, cgi, render, blender, digital art, manga, amateur:1.3), (3D ,3D Game, 3D Game Scene, 3D Character:1.1), (bad hands, bad anatomy, bad body, bad face, bad eyes, bad iris, bad teeth, bad arms, bad legs, deformities:1.3)",
       image_size: "square_hd",
-      //   num_inference_steps: 5,
-      //   guidance_scale: 2,
+      num_inference_steps: 5,
+      guidance_scale: 2,
       //   loras: "",
       //   embeddings: "",
-      //   expand_prompt: false,
+      expand_prompt: false,
       //   seed: 9999999,
     },
   });
@@ -92,8 +126,6 @@ export default function TextToImage() {
     const newImage = await fal.subscribe("fal-ai/lightning-models", {
       input: {
         ...data,
-        num_inference_steps: 5,
-        guidance_scale: 2,
         num_images: 1,
         sync_mode: true,
         enable_safety_checker: false,
@@ -108,35 +140,39 @@ export default function TextToImage() {
       },
     });
 
-    setAspectRatio(getDimensions(data.image_size!)?.at(2)!);
+    setDimensions(getDimensions(data.image_size)!);
     setUpdates("");
+    setProgress("");
     setImage(newImage || null);
     setIsLoading(false);
   }
 
   return (
     <>
-      <div className="flex justify-center items-center ring rounded-md p-2">
-        <div className="w-[400px]">
+      <div className="flex h-[66.5vh] sm:h-[72.5vh] items-center justify-center border-2 rounded-md p-2">
+        <div className="grid place-items-center container">
           {image ? (
-            <AspectRatio ratio={aspectRatio}>
-              <Image
-                //@ts-ignore
-                src={image?.images[0]?.url}
-                className="object-cover rounded-md"
-                alt="image generation"
-                fill
-                priority
-              />
-            </AspectRatio>
+            <Image
+              //@ts-ignore
+              src={image?.images[0]?.url}
+              className="rounded-md"
+              alt="image generation"
+              width={dimensions.at(0)! / 2}
+              height={dimensions.at(1)! / 2}
+              priority
+            />
           ) : (
             <div
               className={cn(
-                "flex flex-col items-center justify-center h-[400px] w-full bg-zinc-800 max-w-lg rounded-md",
+                "flex flex-col items-center bg-accent justify-center w-[450px] h-[450px]",
                 isLoading ? "animate-pulse" : ""
               )}
             >
-              <div className="flex flex-col w-full items-center justify-center gap-2">
+              <div
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2"
+                )}
+              >
                 <p className="italic text-lg tracking-tight">{updates}</p>
                 {progress}
               </div>
@@ -176,18 +212,18 @@ export default function TextToImage() {
                   </div>
                 ) : (
                   <div className="flex gap-1.5">
-                    Send Message <Send size={20} strokeWidth={1.75} />
+                    Generate <Atom size={20} strokeWidth={1.75} />
                   </div>
                 )}
               </Button>
             </div>
-            <Sheet>
+            <Sheet modal={false}>
               <SheetTrigger asChild>
                 <Button variant={"outline"} size={"icon"}>
                   <Settings2 className="h-[1.2rem] w-[3rem]" />
                 </Button>
               </SheetTrigger>
-              <SheetContent>
+              <SheetContent className="overflow-y-scroll scrollbar-none">
                 <SheetHeader>
                   <SheetTitle>Settings</SheetTitle>
                   <SheetDescription>
@@ -205,6 +241,7 @@ export default function TextToImage() {
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
+                            key={field.value}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -213,10 +250,13 @@ export default function TextToImage() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="Lykon/dreamshaper-xl-lightning">
-                                DreamshaperXL Lightning
+                                DreamshaperXL
                               </SelectItem>
                               <SelectItem value="SG161222/RealVisXL_V4.0_Lightning">
-                                RealVisXL v4.0 Lightning
+                                RealVisXL v4.0
+                              </SelectItem>
+                              <SelectItem value="RunDiffusion/Juggernaut-XL-Lightning">
+                                JuggernautXL
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -242,8 +282,7 @@ export default function TextToImage() {
                               />
                             </FormControl>
                             <FormDescription>
-                              Enter negative prompts here (eg. worst quality,
-                              bad atanomy)
+                              Enter negative prompts. (eg. bad hands)
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -259,6 +298,7 @@ export default function TextToImage() {
                               <Select
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
+                                key={field.value}
                               >
                                 <div className="flex gap-1.5 items-center">
                                   <FormControl>
@@ -314,18 +354,119 @@ export default function TextToImage() {
                           </FormItem>
                         )}
                       />
-                      <div className="flex justify-between">
-                        <Button
-                          type="reset"
-                          onClick={() => form.reset()}
-                          variant={"secondary"}
-                        >
-                          Reset
-                        </Button>
-                        <SheetTrigger asChild>
-                          <Button>Save & Exit</Button>
-                        </SheetTrigger>
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="expand_prompt"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center space-x-2">
+                              <FormLabel>Expand Prompt</FormLabel>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </div>
+                            <FormDescription>
+                              Enable to expand your prompt with additional text.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="num_inference_steps"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Num Inference Steps</FormLabel>
+                            <FormControl>
+                              <div className="flex gap-2">
+                                <Slider
+                                  defaultValue={[field.value]}
+                                  onValueChange={(val) => {
+                                    field.onChange(val[0]);
+                                  }}
+                                  max={12}
+                                  step={1}
+                                  min={1}
+                                  value={[field.value]}
+                                  key={Number(field.ref(null))}
+                                />
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={12}
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  {...field}
+                                  value={field.value || ""}
+                                  onChange={(e) =>
+                                    e.target.validity.valid &&
+                                    field.onChange(e.target.value)
+                                  }
+                                  className="w-[70px]"
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="guidance_scale"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Guidance Scale (CFG)</FormLabel>
+                            <FormControl>
+                              <div className="flex gap-2">
+                                <Slider
+                                  defaultValue={[field.value]}
+                                  onValueChange={(val) => {
+                                    field.onChange(val[0]);
+                                  }}
+                                  max={5}
+                                  min={1}
+                                  step={1}
+                                  value={[field.value]}
+                                  key={Number(field.ref(null))}
+                                />
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  min={1}
+                                  max={5}
+                                  {...field}
+                                  value={field.value || ""}
+                                  onChange={(e) =>
+                                    e.target.validity.valid &&
+                                    field.onChange(e.target.value)
+                                  }
+                                  className="w-[70px]"
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <SheetFooter>
+                        <div className="flex w-full justify-between">
+                          <Button
+                            type="reset"
+                            onClick={() => form.reset()}
+                            variant={"secondary"}
+                          >
+                            Reset
+                          </Button>
+                          <SheetClose asChild>
+                            <Button>Close</Button>
+                          </SheetClose>
+                        </div>
+                      </SheetFooter>
                     </div>
                   </div>
                 </div>

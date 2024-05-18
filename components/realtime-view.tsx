@@ -56,7 +56,7 @@ export default function RealTimeView() {
               priority
             />
           ) : (
-            <div className="h-[512px] w-[512px] bg-zinc-800" />
+            <div className="h-[512px] w-[512px] bg-accent" />
           )}
         </div>
       </div>

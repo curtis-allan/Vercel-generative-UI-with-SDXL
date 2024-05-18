@@ -1,13 +1,5 @@
 import Image from "next/image";
-import { Button } from "../ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "../ui/card";
 
 const ImageCard = ({ newImage }: any) => {
   return (

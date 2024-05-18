@@ -26,11 +26,11 @@ export default function GenerativeView() {
                 className="flex gap-4 items-center rounded-lg border p-4 bg-background whitespace-pre-wrap"
               >
                 {message.role === "user" ? (
-                  <div className="p-1.5 bg-rose-400/90 rounded-lg shadow">
+                  <div className="p-1.5 bg-primary rounded-lg shadow">
                     <User className="size-7" />
                   </div>
                 ) : (
-                  <div className="p-1.5 bg-slate-400/90 shadow-sm rounded-lg">
+                  <div className="p-1.5 bg-secondary shadow-sm rounded-lg">
                     <Computer className="size-7" />
                   </div>
                 )}
