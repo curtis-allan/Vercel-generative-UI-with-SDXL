@@ -18,7 +18,7 @@ export default function GenerativeView() {
   return (
     <>
       <div className="grid">
-        <ScrollArea className="grid content-end h-[565px] rounded-md bg-muted/40">
+        <ScrollArea className="grid content-end h-[65.5vh] sm:h-[72.5vh] rounded-md bg-muted/40">
           <div className="flex flex-col-reverse gap-4 p-4">
             {conversation.map((message: ClientMessage) => (
               <div

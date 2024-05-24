@@ -22,10 +22,18 @@ export default function Home() {
       <TabsContent value="generative">
         <GenerativeView />
       </TabsContent>
-      <TabsContent value="realtime">
+      <TabsContent
+        forceMount
+        className="data-[state=inactive]:hidden"
+        value="realtime"
+      >
         <RealTimeView />
       </TabsContent>
-      <TabsContent value="textToImage">
+      <TabsContent
+        forceMount
+        value="textToImage"
+        className="data-[state=inactive]:hidden"
+      >
         <TextToImage />
       </TabsContent>
     </Tabs>

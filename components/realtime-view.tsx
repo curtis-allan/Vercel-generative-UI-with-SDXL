@@ -44,19 +44,18 @@ export default function RealTimeView() {
 
   return (
     <>
-      <div className="flex flex-col justify-center items-center border rounded-md p-3">
-        <div className="max-w-xl">
+      <div className="flex flex-col h-[72.5vh] justify-center items-center border-2 rounded-md p-2">
+        <div className="grid place-items-center container relative overflow-hidden h-full w-full">
           {imgURL ? (
             <Image
               src={imgURL}
-              className="object-contain"
-              width={1024}
-              height={1024}
+              className="object-contain rounded-md"
+              fill
               alt="image generation"
               priority
             />
           ) : (
-            <div className="h-[512px] w-[512px] bg-accent" />
+            <div className="bg-accent h-full w-full" />
           )}
         </div>
       </div>
