@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { AI } from "./actions/ai";
 import { ThemeProvider } from "@/components/theme-provider";
 import Navbar from "@/components/navbar";
+import { Analytics } from "@vercel/analytics/react";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -36,6 +37,7 @@ export default function RootLayout({
               {children}
             </div>
           </ThemeProvider>
+          <Analytics />
         </body>
       </html>
     </AI>
