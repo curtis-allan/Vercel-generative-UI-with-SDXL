@@ -7,7 +7,7 @@ export default function Navbar() {
         Gen<span className="mx-1 font-normal text-rose-400">|R8</span>
       </h1>
       <Badge variant={"outline"} className="absolute top-0 right-0">
-        v1.0
+        v1.2
       </Badge>
     </div>
   );
