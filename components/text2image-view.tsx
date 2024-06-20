@@ -87,6 +87,7 @@ const FormSchema = z.object({
 
 export default function TextToImage() {
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [falImageUrl, setFalImageUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updates, setUpdates] = useState<string>("");
   const [progress, setProgress] = useState<string>("");
@@ -111,6 +112,7 @@ export default function TextToImage() {
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setIsLoading(true);
     setImageUrl("");
+    setFalImageUrl("");
 
     const newImage: any = await fal.subscribe("fal-ai/lightning-models", {
       input: {
@@ -133,6 +135,7 @@ export default function TextToImage() {
     setProgress("");
     const blob = await (await fetch(newImage.images[0].url)).blob();
     setImageUrl(URL.createObjectURL(blob));
+    setFalImageUrl(newImage.images[0].url);
     setIsLoading(false);
   }
 
@@ -149,7 +152,10 @@ export default function TextToImage() {
                 fill
                 priority
               />
-              <div className="absolute top-0 right-0 flex flex-col gap-4 h-fit p-4">
+              <div
+                hidden={isLoading}
+                className="absolute top-0 right-0 flex flex-col gap-4 h-fit p-4"
+              >
                 <Button
                   variant={"outline"}
                   onClick={async () => {
@@ -158,7 +164,15 @@ export default function TextToImage() {
 
                     const result = await fal.subscribe("fal-ai/esrgan", {
                       input: {
-                        image_url: imageUrl,
+                        image_url: falImageUrl,
+                      },
+                      logs: true,
+                      pollInterval: 500,
+                      onQueueUpdate: (update) => {
+                        setUpdates(update.status);
+                        if (update.status === "IN_PROGRESS") {
+                          update.logs!.map((log) => setProgress(log.message));
+                        }
                       },
                     });
                     //@ts-ignore
