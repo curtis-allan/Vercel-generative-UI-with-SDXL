@@ -27,6 +27,7 @@ export default function RealTimeView() {
     connectionKey: "lightning-sdxl",
     throttleInterval: 128,
     onResult: (result) => {
+      console.trace(result);
       const blob = new Blob([result.images[0].content], { type: "image/jpeg" });
       const blobURL = URL.createObjectURL(blob);
 

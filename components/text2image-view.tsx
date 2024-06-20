@@ -1,6 +1,10 @@
 import { Input } from "@/components/ui/input";
-import { Atom, DiamondMinus, Send, Settings2, X } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Atom, Download, Settings2, Wand2, X } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { ModeToggle } from "./theme-toggle";
 import { Button } from "./ui/button";
 import {
@@ -13,6 +17,13 @@ import {
   FormMessage,
 } from "./ui/form";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -22,28 +33,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "./ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 import { Textarea } from "./ui/textarea";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 
-import * as fal from "@fal-ai/serverless-client";
 import { cn, getDimensions } from "@/lib/utils";
-import { AspectRatio } from "./ui/aspect-ratio";
-import { RequestLog } from "@fal-ai/serverless-client/src/types";
+import * as fal from "@fal-ai/serverless-client";
 import Spinner from "./spinner";
-import { Switch } from "./ui/switch";
 import { Slider } from "./ui/slider";
-import { ScrollArea } from "./ui/scroll-area";
-import { Dialog } from "./ui/dialog";
+import { Switch } from "./ui/switch";
 
 fal.config({
   proxyUrl: "/api/fal/proxy",
@@ -90,10 +86,9 @@ const FormSchema = z.object({
 });
 
 export default function TextToImage() {
-  const [image, setImage] = useState<object | null>(null);
+  const [imageUrl, setImageUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updates, setUpdates] = useState<string>("");
-  const [dimensions, setDimensions] = useState<number[]>([]);
   const [progress, setProgress] = useState<string>("");
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -115,14 +110,14 @@ export default function TextToImage() {
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setIsLoading(true);
-    setImage(null);
+    setImageUrl("");
 
-    const newImage = await fal.subscribe("fal-ai/lightning-models", {
+    const newImage: any = await fal.subscribe("fal-ai/lightning-models", {
       input: {
         ...data,
         num_images: 1,
-        sync_mode: true,
         enable_safety_checker: false,
+        sync_mode: true,
       },
       logs: true,
       pollInterval: 500,
@@ -134,10 +129,10 @@ export default function TextToImage() {
       },
     });
 
-    setDimensions(getDimensions(data.image_size)!);
     setUpdates("");
     setProgress("");
-    setImage(newImage || null);
+    const blob = await (await fetch(newImage.images[0].url)).blob();
+    setImageUrl(URL.createObjectURL(blob));
     setIsLoading(false);
   }
 
@@ -145,15 +140,43 @@ export default function TextToImage() {
     <>
       <div className="flex h-[66.5vh] sm:h-[72.5vh] items-center justify-center border-2 rounded-md p-2">
         <div className="grid place-items-center container relative overflow-hidden w-full h-full">
-          {image ? (
-            <Image
-              //@ts-ignore
-              src={image?.images[0]?.url}
-              className="object-contain rounded-md"
-              alt="image generation"
-              fill
-              priority
-            />
+          {imageUrl !== "" ? (
+            <>
+              <Image
+                src={imageUrl}
+                className="object-contain rounded-md"
+                alt="image generation"
+                fill
+                priority
+              />
+              <div className="absolute top-0 right-0 flex flex-col gap-4 h-fit p-4">
+                <Button
+                  variant={"outline"}
+                  onClick={async () => {
+                    setIsLoading(true);
+                    setImageUrl("");
+
+                    const result = await fal.subscribe("fal-ai/esrgan", {
+                      input: {
+                        image_url: imageUrl,
+                      },
+                    });
+                    //@ts-ignore
+                    setImageUrl(result!.image.url);
+                    setIsLoading(false);
+                  }}
+                >
+                  <Wand2 size={20} className="mr-2" />
+                  Upscale
+                </Button>
+                <a href={imageUrl} download>
+                  <Button variant={"outline"}>
+                    <Download size={20} className="mr-2" />
+                    Download
+                  </Button>
+                </a>
+              </div>
+            </>
           ) : (
             <div
               className={cn(
